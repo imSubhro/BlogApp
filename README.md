@@ -97,62 +97,6 @@ php artisan serve
 npm run dev
 ```
 
-## 📁 Project Structure
-
-```
-backend/
-├── app/
-│   ├── Http/
-│   │   ├── Controllers/
-│   │   │   ├── BlogController.php      # Blog CRUD operations
-│   │   │   └── PublicBlogController.php # Public blog pages
-│   │   ├── Middleware/
-│   │   │   └── SecurityHeaders.php     # Security headers
-│   │   └── Requests/
-│   │       ├── StoreBlogRequest.php    # Blog creation validation
-│   │       └── UpdateBlogRequest.php   # Blog update validation
-│   ├── Models/
-│   │   ├── Blog.php                    # Blog model
-│   │   └── User.php                    # User model
-│   └── Policies/
-│       └── BlogPolicy.php              # Blog authorization
-├── database/
-│   └── migrations/                     # Database migrations
-├── resources/
-│   └── views/
-│       ├── blogs/                      # Blog views
-│       ├── dashboard.blade.php         # User dashboard
-│       ├── welcome.blade.php           # Home page
-│       └── errors/                     # Error pages
-└── routes/
-    └── web.php                         # Web routes
-```
-
-## 🛣️ Routes
-
-| Method | URI | Name | Description |
-|--------|-----|------|-------------|
-| GET | `/` | home | Home page |
-| GET | `/blogs` | blogs.public | Public blog listing |
-| GET | `/blogs/{slug}` | blogs.single | Single blog view |
-| GET | `/author/{id}` | blogs.by-author | Author's blogs |
-| GET | `/dashboard` | dashboard | User dashboard |
-| GET | `/my-blogs` | blogs.index | User's blogs |
-| GET | `/my-blogs/create` | blogs.create | Create blog form |
-| POST | `/my-blogs` | blogs.store | Store new blog |
-| GET | `/my-blogs/{blog}/edit` | blogs.edit | Edit blog form |
-| PUT | `/my-blogs/{blog}` | blogs.update | Update blog |
-| DELETE | `/my-blogs/{blog}` | blogs.destroy | Delete blog |
-| PATCH | `/my-blogs/{blog}/toggle-status` | blogs.toggle-status | Toggle publish status |
-
-## 🔒 Security
-
-- **CSRF Protection** - All forms include CSRF tokens
-- **XSS Prevention** - Content escaped with Blade's `{{ }}`
-- **Authorization** - BlogPolicy ensures users can only manage their own blogs
-- **Form Validation** - Request validation with custom error messages
-- **Security Headers** - X-Content-Type-Options, X-Frame-Options, X-XSS-Protection
-
 ## 🎨 Tech Stack
 
 - **Backend**: Laravel 12.x
@@ -162,18 +106,6 @@ backend/
 - **Build Tool**: Vite
 - **Icons**: Heroicons (inline SVG)
 
-## 📦 Deployment Checklist
-
-- [ ] Set `APP_ENV=production`
-- [ ] Set `APP_DEBUG=false`
-- [ ] Configure production database credentials
-- [ ] Run `php artisan config:cache`
-- [ ] Run `php artisan route:cache`
-- [ ] Run `php artisan view:cache`
-- [ ] Run `npm run build`
-- [ ] Set up proper file permissions
-- [ ] Configure web server (Nginx/Apache)
-- [ ] Set up SSL certificate
 
 ## 📄 License
 
