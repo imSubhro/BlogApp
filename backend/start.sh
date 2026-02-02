@@ -1,10 +1,21 @@
 #!/bin/sh
+set -e
 
-echo "Starting Laravel..."
+echo "🚀 Starting deployment script..."
 
-php artisan key:generate --force || true
-php artisan migrate --force || true
-php artisan optimize:clear || true
-php artisan config:cache || true
+# 1. Cache configuration for performance
+echo "Caching config..."
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
 
-php artisan serve --host=0.0.0.0 --port=10000
+# 2. Run database migrations
+echo "Running migrations..."
+php artisan migrate --force
+
+# 3. Link storage if not exists (optional in some docker setups but good practice)
+php artisan storage:link || true
+
+# 4. Start Apache (in foreground)
+echo "Starting Apache..."
+exec apache2-foreground

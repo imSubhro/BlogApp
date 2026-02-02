@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  app:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    environment:
+      APP_ENV: local
+      APP_DEBUG: true
+      APP_KEY: ${APP_KEY:-base64:YOUR_GENERATED_KEY_HERE}
+      DB_CONNECTION: pgsql
+      # You can add a postgres service here if needed for local dev, 
+      # or point to a remote DB.
+    volumes:
+      # Mount current directory, but exclude node_modules/vendor so we use the container's installed ones
+      # Note: This is tricky with Docker Desktop on Windows sometimes. 
+      # For a pure "run checks" approach, we can disable the volume or use exact excludes.
+      # For now, we will NOT mount the volume to avoid overwriting the container's built assets 
+      # with the local host's potentially unbuilt/different state.
+      - ./storage:/var/www/html/storage
