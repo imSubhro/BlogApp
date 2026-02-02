@@ -1,33 +1,36 @@
 FROM php:8.2-cli
 
-# System dependencies
+# System deps
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
+    curl \
     libpq-dev \
+    nodejs \
+    npm \
     && docker-php-ext-install pdo pdo_pgsql
 
 # Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Working directory
 WORKDIR /var/www/html
 
-# Copy project
 COPY . .
 
-# Install PHP dependencies
+# PHP deps
 RUN composer install --no-dev --optimize-autoloader
 
-# Create storage link (safe)
+# Frontend deps + build (THIS FIXES VITE ERROR)
+RUN npm install
+RUN npm run build
+
+# Storage
 RUN php artisan storage:link || true
 
-# Copy start script
+# Start script
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
 
-# Expose Render port
 EXPOSE 10000
 
-# Start Laravel properly
 CMD ["/start.sh"]
