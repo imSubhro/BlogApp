@@ -12,12 +12,28 @@ services:
       APP_DEBUG: true
       APP_KEY: ${APP_KEY:-base64:YOUR_GENERATED_KEY_HERE}
       DB_CONNECTION: pgsql
-      # You can add a postgres service here if needed for local dev, 
-      # or point to a remote DB.
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE:-BlogApp_db}
+      DB_USERNAME: ${DB_USERNAME:-blog_user}
+      DB_PASSWORD: ${DB_PASSWORD:-BlogApp_users}
+    depends_on:
+      - db
     volumes:
-      # Mount current directory, but exclude node_modules/vendor so we use the container's installed ones
-      # Note: This is tricky with Docker Desktop on Windows sometimes. 
-      # For a pure "run checks" approach, we can disable the volume or use exact excludes.
-      # For now, we will NOT mount the volume to avoid overwriting the container's built assets 
-      # with the local host's potentially unbuilt/different state.
+      # Mount storage for persistence/logs
       - ./storage:/var/www/html/storage
+
+  db:
+    image: postgres:15
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-BlogApp_db}
+      POSTGRES_USER: ${DB_USERNAME:-blog_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-BlogApp_users}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+volumes:
+  db_data:
