@@ -13,6 +13,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Trust proxies for Render (Load Balancer)
+        $middleware->trustProxies(at: '*');
+
         // Add security headers middleware
         $middleware->web(append: [
             \App\Http\Middleware\SecurityHeaders::class,

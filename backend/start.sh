@@ -13,8 +13,10 @@ php artisan view:cache
 echo "Running migrations..."
 php artisan migrate --force
 
-# 3. Link storage if not exists (optional in some docker setups but good practice)
-php artisan storage:link || true
+# 3. Link storage if not exists (re-link to ensure correctness)
+rm -rf public/storage
+php artisan storage:link
+
 
 # 4. Start Apache (in foreground)
 echo "Starting Apache..."
