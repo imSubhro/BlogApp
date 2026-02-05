@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BlogController;
+use App\Http\Controllers\CommentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicBlogController;
 use Illuminate\Support\Facades\Route;
@@ -26,6 +27,8 @@ Route::get('/', function () {
 Route::get('/blogs', [PublicBlogController::class, 'index'])->name('blogs.public');
 Route::get('/blogs/{slug}', [PublicBlogController::class, 'show'])->name('blogs.single');
 Route::get('/author/{userId}', [PublicBlogController::class, 'byAuthor'])->name('blogs.by-author');
+Route::get('/category/{slug}', [PublicBlogController::class, 'byCategory'])->name('blogs.by-category');
+Route::get('/tag/{slug}', [PublicBlogController::class, 'byTag'])->name('blogs.by-tag');
 
 // Dashboard with stats
 Route::get('/dashboard', function () {
@@ -63,6 +66,11 @@ Route::middleware('auth')->group(function () {
     // Additional blog actions
     Route::patch('/my-blogs/{blog}/toggle-status', [BlogController::class, 'toggleStatus'])->name('blogs.toggle-status');
     Route::delete('/my-blogs/{blog}/remove-image', [BlogController::class, 'removeImage'])->name('blogs.remove-image');
+    
+    // Comment routes
+    Route::post('/blogs/{blog}/comments', [CommentController::class, 'store'])->name('comments.store');
+    Route::put('/comments/{comment}', [CommentController::class, 'update'])->name('comments.update');
+    Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
 });
 
 require __DIR__.'/auth.php';
