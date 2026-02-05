@@ -143,6 +143,70 @@
                             @enderror
                         </div>
                         
+                        <!-- Category -->
+                        <div class="mb-6">
+                            <label for="category_id" class="block text-sm font-medium text-gray-700 mb-2">
+                                Category
+                            </label>
+                            <select 
+                                name="category_id" 
+                                id="category_id" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition @error('category_id') border-red-500 @enderror"
+                            >
+                                <option value="">Select a category (optional)</option>
+                                @foreach($categories as $category)
+                                    <option value="{{ $category->id }}" {{ old('category_id', $blog->category_id) == $category->id ? 'selected' : '' }} style="color: {{ $category->color }}">
+                                        {{ $category->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('category_id')
+                                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        
+                        <!-- Tags -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Tags
+                            </label>
+                            <div class="flex flex-wrap gap-2 p-4 border border-gray-300 rounded-lg min-h-[60px]" id="selected-tags">
+                                <!-- Pre-selected tags will be populated by JavaScript -->
+                            </div>
+                            <div class="mt-3">
+                                <div class="flex gap-2">
+                                    <input 
+                                        type="text" 
+                                        id="tag-input" 
+                                        class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                                        placeholder="Type to search or add new tag..."
+                                    >
+                                    <button type="button" id="add-tag-btn" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                                        Add
+                                    </button>
+                                </div>
+                                <div id="tag-suggestions" class="mt-2 hidden">
+                                    <p class="text-xs text-gray-500 mb-2">Available tags:</p>
+                                    <div class="flex flex-wrap gap-1">
+                                        @foreach($tags as $tag)
+                                            <button type="button" 
+                                                    class="tag-suggestion px-3 py-1 text-sm rounded-full border transition hover:shadow-md"
+                                                    data-id="{{ $tag->id }}"
+                                                    data-name="{{ $tag->name }}"
+                                                    data-color="{{ $tag->color }}"
+                                                    style="border-color: {{ $tag->color }}; color: {{ $tag->color }};"
+                                            >
+                                                {{ $tag->name }}
+                                            </button>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+                            @error('tags')
+                                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        
                         <!-- Status -->
                         <div class="mb-8">
                             <label class="block text-sm font-medium text-gray-700 mb-3">
@@ -254,8 +318,9 @@
         </div>
     </div>
     
-    <!-- Image Preview Script -->
+    <!-- Image Preview and Tags Script -->
     <script>
+        // Image Preview
         document.getElementById('featured_image').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
@@ -267,5 +332,114 @@
                 reader.readAsDataURL(file);
             }
         });
+
+        // Tags functionality
+        const selectedTags = new Map();
+        const selectedTagsContainer = document.getElementById('selected-tags');
+        const tagInput = document.getElementById('tag-input');
+        const addTagBtn = document.getElementById('add-tag-btn');
+        const tagSuggestions = document.getElementById('tag-suggestions');
+
+        // Pre-selected tags from backend
+        const preSelectedTags = @json($selectedTags ?? []);
+
+        // Initialize pre-selected tags
+        document.addEventListener('DOMContentLoaded', () => {
+            preSelectedTags.forEach(tagId => {
+                const suggestionBtn = document.querySelector(`.tag-suggestion[data-id="${tagId}"]`);
+                if (suggestionBtn) {
+                    addTag(tagId.toString(), suggestionBtn.dataset.name, suggestionBtn.dataset.color);
+                    suggestionBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+            });
+        });
+
+        // Show suggestions on input focus
+        tagInput.addEventListener('focus', () => {
+            tagSuggestions.classList.remove('hidden');
+        });
+
+        // Filter suggestions based on input
+        tagInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            document.querySelectorAll('.tag-suggestion').forEach(btn => {
+                const tagName = btn.dataset.name.toLowerCase();
+                if (tagName.includes(searchTerm)) {
+                    btn.classList.remove('hidden');
+                } else {
+                    btn.classList.add('hidden');
+                }
+            });
+        });
+
+        // Add tag from suggestions
+        document.querySelectorAll('.tag-suggestion').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = btn.dataset.id;
+                const name = btn.dataset.name;
+                const color = btn.dataset.color;
+                if (!selectedTags.has(id)) {
+                    addTag(id, name, color);
+                    btn.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+            });
+        });
+
+        // Add new tag button
+        addTagBtn.addEventListener('click', () => {
+            const name = tagInput.value.trim();
+            if (name) {
+                const existingBtn = Array.from(document.querySelectorAll('.tag-suggestion')).find(
+                    btn => btn.dataset.name.toLowerCase() === name.toLowerCase()
+                );
+                
+                if (existingBtn && !selectedTags.has(existingBtn.dataset.id)) {
+                    addTag(existingBtn.dataset.id, existingBtn.dataset.name, existingBtn.dataset.color);
+                    existingBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                } else if (!existingBtn) {
+                    const tempId = 'new_' + Date.now();
+                    addTag(tempId, name, '#6366f1', true);
+                }
+                tagInput.value = '';
+            }
+        });
+
+        // Enter key to add tag
+        tagInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addTagBtn.click();
+            }
+        });
+
+        function addTag(id, name, color, isNew = false) {
+            selectedTags.set(id, { name, isNew });
+            
+            const tagEl = document.createElement('span');
+            tagEl.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium';
+            tagEl.style.backgroundColor = color + '20';
+            tagEl.style.color = color;
+            tagEl.innerHTML = `
+                ${name}
+                <input type="hidden" name="tags[]" value="${isNew ? name : id}">
+                <button type="button" class="ml-2 hover:opacity-70" onclick="removeTag('${id}', this)">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            `;
+            selectedTagsContainer.appendChild(tagEl);
+        }
+
+        function removeTag(id, btnEl) {
+            selectedTags.delete(id);
+            btnEl.closest('span').remove();
+            
+            const suggestionBtn = document.querySelector(`.tag-suggestion[data-id="${id}"]`);
+            if (suggestionBtn) {
+                suggestionBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
     </script>
 </x-app-layout>
+

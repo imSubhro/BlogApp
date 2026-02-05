@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreBlogRequest;
 use App\Http\Requests\UpdateBlogRequest;
 use App\Models\Blog;
+use App\Models\Category;
+use App\Models\Tag;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -31,7 +33,10 @@ class BlogController extends Controller
      */
     public function create(): View
     {
-        return view('blogs.create');
+        $categories = Category::orderBy('sort_order')->get();
+        $tags = Tag::orderBy('name')->get();
+        
+        return view('blogs.create', compact('categories', 'tags'));
     }
 
     /**
@@ -57,6 +62,21 @@ class BlogController extends Controller
         }
 
         $blog = Blog::create($validated);
+
+        // Sync tags if provided
+        if ($request->has('tags')) {
+            $tagIds = collect($request->input('tags'))->map(function ($tagInput) {
+                // Handle both existing tag IDs and new tag names
+                if (is_numeric($tagInput)) {
+                    return (int) $tagInput;
+                }
+                // Create new tag if it's a name
+                $tag = Tag::findOrCreateByName($tagInput);
+                return $tag->id;
+            })->toArray();
+            
+            $blog->tags()->sync($tagIds);
+        }
 
         $message = $blog->isPublished() 
             ? 'Blog published successfully!' 
@@ -84,7 +104,11 @@ class BlogController extends Controller
         // Authorization check - ensure user owns the blog
         Gate::authorize('update', $blog);
 
-        return view('blogs.edit', compact('blog'));
+        $categories = Category::orderBy('sort_order')->get();
+        $tags = Tag::orderBy('name')->get();
+        $selectedTags = $blog->tags->pluck('id')->toArray();
+        
+        return view('blogs.edit', compact('blog', 'categories', 'tags', 'selectedTags'));
     }
 
     /**
@@ -118,6 +142,21 @@ class BlogController extends Controller
         }
 
         $blog->update($validated);
+
+        // Sync tags if provided
+        if ($request->has('tags')) {
+            $tagIds = collect($request->input('tags'))->map(function ($tagInput) {
+                if (is_numeric($tagInput)) {
+                    return (int) $tagInput;
+                }
+                $tag = Tag::findOrCreateByName($tagInput);
+                return $tag->id;
+            })->toArray();
+            
+            $blog->tags()->sync($tagIds);
+        } else {
+            $blog->tags()->detach();
+        }
 
         $message = $blog->isPublished() 
             ? 'Blog updated and published!' 
