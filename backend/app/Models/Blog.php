@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 class Blog extends Model
@@ -16,6 +18,7 @@ class Blog extends Model
      */
     protected $fillable = [
         'user_id',
+        'category_id',
         'title',
         'slug',
         'excerpt',
@@ -38,6 +41,50 @@ class Blog extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the category of the blog.
+     */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
+    }
+
+    /**
+     * Get the tags for the blog.
+     */
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(Tag::class, 'blog_tag')->withTimestamps();
+    }
+
+    /**
+     * Get the comments for the blog.
+     */
+    public function comments(): HasMany
+    {
+        return $this->hasMany(Comment::class);
+    }
+
+    /**
+     * Get only top-level approved comments with their replies.
+     */
+    public function topLevelComments(): HasMany
+    {
+        return $this->comments()
+            ->whereNull('parent_id')
+            ->where('is_approved', true)
+            ->with(['user', 'allReplies'])
+            ->orderBy('created_at', 'desc');
+    }
+
+    /**
+     * Get the total comments count for this blog.
+     */
+    public function getCommentsCountAttribute(): int
+    {
+        return $this->comments()->where('is_approved', true)->count();
     }
 
     /**

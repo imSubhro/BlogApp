@@ -28,6 +28,10 @@ class StoreBlogRequest extends FormRequest
                 'min:3',
                 'max:255',
             ],
+            'category_id' => [
+                'nullable',
+                'exists:categories,id',
+            ],
             'excerpt' => [
                 'nullable',
                 'string',
@@ -47,6 +51,14 @@ class StoreBlogRequest extends FormRequest
             'status' => [
                 'required',
                 'in:draft,published',
+            ],
+            'tags' => [
+                'nullable',
+                'array',
+            ],
+            'tags.*' => [
+                'nullable',
+                'string',
             ],
         ];
     }
