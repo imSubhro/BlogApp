@@ -3,7 +3,11 @@ set -e
 
 echo "🚀 Starting deployment script..."
 
-# 1. Cache configuration for performance
+# 1. Clear and re-cache configuration (ensures fresh env vars)
+echo "Clearing old config cache..."
+php artisan config:clear
+php artisan cache:clear
+
 echo "Caching config..."
 php artisan config:cache
 php artisan route:cache

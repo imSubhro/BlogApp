@@ -17,10 +17,19 @@ class ImageUploadService
     {
         // Check if Cloudinary is configured
         if ($this->isCloudinaryConfigured()) {
-            return $this->uploadToCloudinary($file, $folder);
+            $cloudinaryUrl = $this->uploadToCloudinary($file, $folder);
+            
+            // If Cloudinary upload succeeded, return the URL
+            if ($cloudinaryUrl) {
+                Log::info('Image uploaded to Cloudinary', ['url' => $cloudinaryUrl]);
+                return $cloudinaryUrl;
+            }
+            
+            // Cloudinary failed, fall back to local storage
+            Log::warning('Cloudinary upload failed, falling back to local storage');
         }
 
-        // Fall back to local storage
+        // Use local storage
         return $this->uploadToLocal($file, $folder);
     }
 
@@ -65,9 +74,11 @@ class ImageUploadService
      */
     protected function isCloudinaryConfigured(): bool
     {
-        return !empty(config('services.cloudinary.cloud_name'))
-            && !empty(config('services.cloudinary.api_key'))
-            && !empty(config('services.cloudinary.api_secret'));
+        $cloudName = config('services.cloudinary.cloud_name');
+        $apiKey = config('services.cloudinary.api_key');
+        $apiSecret = config('services.cloudinary.api_secret');
+        
+        return !empty($cloudName) && !empty($apiKey) && !empty($apiSecret);
     }
 
     /**
@@ -80,38 +91,68 @@ class ImageUploadService
             $apiKey = config('services.cloudinary.api_key');
             $apiSecret = config('services.cloudinary.api_secret');
 
+            if (empty($cloudName) || empty($apiKey) || empty($apiSecret)) {
+                Log::error('Cloudinary credentials missing');
+                return null;
+            }
+
             $timestamp = time();
-            $publicId = $folder . '/' . Str::uuid();
             
-            // Create signature
-            $params = [
-                'public_id' => $publicId,
+            // Create signature - only include params that need to be signed
+            $paramsToSign = [
+                'folder' => 'blogapp/' . $folder,
                 'timestamp' => $timestamp,
             ];
-            ksort($params);
-            $signatureString = http_build_query($params) . $apiSecret;
+            
+            // Sort and create signature string
+            ksort($paramsToSign);
+            $signatureParts = [];
+            foreach ($paramsToSign as $key => $value) {
+                $signatureParts[] = $key . '=' . $value;
+            }
+            $signatureString = implode('&', $signatureParts) . $apiSecret;
             $signature = sha1($signatureString);
 
-            // Upload to Cloudinary
-            $response = Http::attach('file', file_get_contents($file->getRealPath()), $file->getClientOriginalName())
+            // Read file content
+            $fileContent = file_get_contents($file->getRealPath());
+            if ($fileContent === false) {
+                Log::error('Could not read uploaded file');
+                return null;
+            }
+
+            // Upload to Cloudinary using multipart form
+            $response = Http::timeout(30)
+                ->attach('file', $fileContent, $file->getClientOriginalName())
                 ->post("https://api.cloudinary.com/v1_1/{$cloudName}/image/upload", [
                     'api_key' => $apiKey,
                     'timestamp' => $timestamp,
                     'signature' => $signature,
-                    'public_id' => $publicId,
-                    'folder' => 'blogapp',
+                    'folder' => 'blogapp/' . $folder,
                 ]);
 
             if ($response->successful()) {
                 $data = $response->json();
-                return $data['secure_url'] ?? null;
+                $secureUrl = $data['secure_url'] ?? null;
+                
+                if ($secureUrl) {
+                    return $secureUrl;
+                }
+                
+                Log::error('Cloudinary response missing secure_url', ['data' => $data]);
+                return null;
             }
 
-            Log::error('Cloudinary upload failed', ['response' => $response->body()]);
+            Log::error('Cloudinary upload failed', [
+                'status' => $response->status(),
+                'body' => $response->body()
+            ]);
             return null;
 
         } catch (\Exception $e) {
-            Log::error('Cloudinary upload exception', ['error' => $e->getMessage()]);
+            Log::error('Cloudinary upload exception', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return null;
         }
     }
@@ -123,7 +164,7 @@ class ImageUploadService
     {
         try {
             // Extract public_id from URL
-            // URL format: https://res.cloudinary.com/{cloud_name}/image/upload/v{version}/{public_id}.{ext}
+            // URL format: https://res.cloudinary.com/{cloud_name}/image/upload/v{version}/{folder}/{public_id}.{ext}
             $pattern = '/\/v\d+\/(.+)\.\w+$/';
             if (preg_match($pattern, $url, $matches)) {
                 $publicId = $matches[1];
@@ -133,12 +174,16 @@ class ImageUploadService
                 $apiSecret = config('services.cloudinary.api_secret');
 
                 $timestamp = time();
-                $params = [
+                $paramsToSign = [
                     'public_id' => $publicId,
                     'timestamp' => $timestamp,
                 ];
-                ksort($params);
-                $signatureString = http_build_query($params) . $apiSecret;
+                ksort($paramsToSign);
+                $signatureParts = [];
+                foreach ($paramsToSign as $key => $value) {
+                    $signatureParts[] = $key . '=' . $value;
+                }
+                $signatureString = implode('&', $signatureParts) . $apiSecret;
                 $signature = sha1($signatureString);
 
                 $response = Http::post("https://api.cloudinary.com/v1_1/{$cloudName}/image/destroy", [
@@ -162,6 +207,8 @@ class ImageUploadService
      */
     protected function uploadToLocal(UploadedFile $file, string $folder): string
     {
-        return $file->store($folder, 'public');
+        $path = $file->store($folder, 'public');
+        Log::info('Image uploaded to local storage', ['path' => $path]);
+        return $path;
     }
 }
