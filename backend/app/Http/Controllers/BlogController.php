@@ -7,14 +7,20 @@ use App\Http\Requests\UpdateBlogRequest;
 use App\Models\Blog;
 use App\Models\Category;
 use App\Models\Tag;
+use App\Services\ImageUploadService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class BlogController extends Controller
 {
+    protected ImageUploadService $imageService;
+
+    public function __construct(ImageUploadService $imageService)
+    {
+        $this->imageService = $imageService;
+    }
 
     /**
      * Display a listing of the user's blogs.
@@ -22,6 +28,7 @@ class BlogController extends Controller
     public function index(): View
     {
         $blogs = Auth::user()->blogs()
+            ->with(['category', 'tags'])
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
@@ -50,10 +57,12 @@ class BlogController extends Controller
         $validated['slug'] = Blog::generateSlug($validated['title']);
         $validated['user_id'] = Auth::id();
 
-        // Handle featured image upload
+        // Handle featured image upload (supports Cloudinary on production)
         if ($request->hasFile('featured_image')) {
-            $path = $request->file('featured_image')->store('blog-images', 'public');
-            $validated['featured_image'] = $path;
+            $imagePath = $this->imageService->upload($request->file('featured_image'), 'blog-images');
+            if ($imagePath) {
+                $validated['featured_image'] = $imagePath;
+            }
         }
 
         // Set published_at if publishing
@@ -128,10 +137,12 @@ class BlogController extends Controller
         if ($request->hasFile('featured_image')) {
             // Delete old image if exists
             if ($blog->featured_image) {
-                Storage::disk('public')->delete($blog->featured_image);
+                $this->imageService->delete($blog->featured_image);
             }
-            $path = $request->file('featured_image')->store('blog-images', 'public');
-            $validated['featured_image'] = $path;
+            $imagePath = $this->imageService->upload($request->file('featured_image'), 'blog-images');
+            if ($imagePath) {
+                $validated['featured_image'] = $imagePath;
+            }
         }
 
         // Handle status change
@@ -175,7 +186,7 @@ class BlogController extends Controller
 
         // Delete featured image if exists
         if ($blog->featured_image) {
-            Storage::disk('public')->delete($blog->featured_image);
+            $this->imageService->delete($blog->featured_image);
         }
 
         $blog->delete();
@@ -211,7 +222,7 @@ class BlogController extends Controller
         Gate::authorize('update', $blog);
 
         if ($blog->featured_image) {
-            Storage::disk('public')->delete($blog->featured_image);
+            $this->imageService->delete($blog->featured_image);
             $blog->update(['featured_image' => null]);
         }
 

@@ -18,7 +18,7 @@
     <meta property="og:title" content="{{ $blog->title }}">
     <meta property="og:description" content="{{ $blog->excerpt ?: $blog->shortExcerpt }}">
     @if($blog->featured_image)
-    <meta property="og:image" content="{{ asset('storage/' . $blog->featured_image) }}">
+    <meta property="og:image" content="{{ $blog->featured_image_url }}">
     @endif
     <meta property="article:published_time" content="{{ $blog->published_at->toIso8601String() }}">
     <meta property="article:modified_time" content="{{ $blog->updated_at->toIso8601String() }}">
@@ -30,7 +30,7 @@
     <meta name="twitter:title" content="{{ $blog->title }}">
     <meta name="twitter:description" content="{{ $blog->excerpt ?: $blog->shortExcerpt }}">
     @if($blog->featured_image)
-    <meta name="twitter:image" content="{{ asset('storage/' . $blog->featured_image) }}">
+    <meta name="twitter:image" content="{{ $blog->featured_image_url }}">
     @endif
     
     <!-- Fonts -->
@@ -88,7 +88,7 @@
             @if($blog->featured_image)
                 <div class="mb-8 rounded-2xl overflow-hidden shadow-lg">
                     <img 
-                        src="{{ asset('storage/' . $blog->featured_image) }}" 
+                        src="{{ $blog->featured_image_url }}" 
                         alt="{{ $blog->title }}" 
                         class="w-full h-auto max-h-[500px] object-cover"
                     >

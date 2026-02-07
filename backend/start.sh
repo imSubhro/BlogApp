@@ -13,11 +13,15 @@ php artisan view:cache
 echo "Running migrations..."
 php artisan migrate --force
 
-# 3. Link storage if not exists (re-link to ensure correctness)
+# 3. Seed categories and tags (uses firstOrCreate, safe to re-run)
+echo "Seeding categories and tags..."
+php artisan db:seed --class=CategoryTagSeeder --force
+
+# 4. Link storage if not exists (re-link to ensure correctness)
 rm -rf public/storage
 php artisan storage:link
 
-
-# 4. Start Apache (in foreground)
-echo "Starting Apache..."
+# 5. Start Apache (in foreground)
+echo "✅ Deployment complete! Starting Apache..."
 exec apache2-foreground
+

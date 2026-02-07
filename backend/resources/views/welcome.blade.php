@@ -289,7 +289,7 @@
                                     @if($blog->featured_image)
                                         <div class="overflow-hidden">
                                             <img 
-                                                src="{{ asset('storage/' . $blog->featured_image) }}" 
+                                                src="{{ $blog->featured_image_url }}" 
                                                 alt="{{ $blog->title }}" 
                                                 class="w-full h-56 object-cover group-hover:scale-110 transition-transform duration-700"
                                                 loading="lazy"

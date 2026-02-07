@@ -60,7 +60,7 @@
                             <article class="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all overflow-hidden group">
                                 <a href="{{ route('blogs.single', $blog->slug) }}" class="block">
                                     @if($blog->featured_image)
-                                        <img src="{{ asset('storage/' . $blog->featured_image) }}" alt="{{ $blog->title }}" class="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy">
+                                        <img src="{{ $blog->featured_image_url }}" alt="{{ $blog->title }}" class="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy">
                                     @else
                                         <div class="h-48 bg-gradient-to-br from-indigo-500 to-purple-600"></div>
                                     @endif

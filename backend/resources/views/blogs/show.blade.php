@@ -44,7 +44,7 @@
                     <!-- Featured Image -->
                     @if($blog->featured_image)
                         <div class="mb-8 rounded-lg overflow-hidden">
-                            <img src="{{ asset('storage/' . $blog->featured_image) }}" alt="{{ $blog->title }}" class="w-full h-auto max-h-[400px] object-cover">
+                            <img src="{{ $blog->featured_image_url }}" alt="{{ $blog->title }}" class="w-full h-auto max-h-[400px] object-cover">
                         </div>
                     @endif
 

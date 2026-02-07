@@ -157,7 +157,7 @@
                             <a href="{{ route('blogs.single', $blog->slug) }}" class="block overflow-hidden relative">
                                 @if($blog->featured_image)
                                     <img 
-                                        src="{{ asset('storage/' . $blog->featured_image) }}" 
+                                        src="{{ $blog->featured_image_url }}" 
                                         alt="{{ $blog->title }}" 
                                         class="w-full h-52 object-cover group-hover:scale-110 transition-transform duration-500"
                                         loading="lazy"

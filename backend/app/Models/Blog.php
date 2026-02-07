@@ -36,6 +36,25 @@ class Blog extends Model
     ];
 
     /**
+     * Get the full URL for the featured image.
+     * Supports both Cloudinary URLs and local storage paths.
+     */
+    public function getFeaturedImageUrlAttribute(): ?string
+    {
+        if (!$this->featured_image) {
+            return null;
+        }
+
+        // If it's already a full URL (Cloudinary), return as-is
+        if (Str::startsWith($this->featured_image, ['http://', 'https://'])) {
+            return $this->featured_image;
+        }
+
+        // Return local storage URL
+        return asset('storage/' . $this->featured_image);
+    }
+
+    /**
      * Get the user that owns the blog.
      */
     public function user(): BelongsTo

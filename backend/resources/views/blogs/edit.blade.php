@@ -102,7 +102,7 @@
                                     Current Featured Image
                                 </label>
                                 <div class="relative inline-block">
-                                    <img src="{{ asset('storage/' . $blog->featured_image) }}" alt="Featured Image" class="max-h-48 rounded-lg">
+                                    <img src="{{ $blog->featured_image_url }}" alt="Featured Image" class="max-h-48 rounded-lg">
                                     <button type="button" 
                                             onclick="if(confirm('Remove this image?')) { document.getElementById('remove-image-form').submit(); }"
                                             class="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition shadow-lg">
